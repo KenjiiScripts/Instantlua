@@ -1,185 +1,203 @@
-local Player = game:GetService("Players").LocalPlayer
+--// Simple Teleport UI (Clean) - Save Loc / Teleport / Block (does nothing)
+--// Put this in a LocalScript (StarterPlayerScripts or StarterGui)
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
--- UI erstellen
-local Gui = Instance.new("ScreenGui")
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 280, 0, 180)
-Main.Position = UDim2.new(0.5, -140, 0.5, -90)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Main.BackgroundTransparency = 0.25
-Main.BorderSizePixel = 0
-Main.Active = true
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Abgerundete Ecken
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 14)
-Corner.Parent = Main
+-- ====== UI BUILD ======
+local gui = Instance.new("ScreenGui")
+gui.Name = "SaveTP_UI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
 
--- Schatten um das UI
-local Shadow = Instance.new("ImageLabel")
-Shadow.Size = UDim2.new(1, 24, 1, 24)
-Shadow.Position = UDim2.new(0, -12, 0, -12)
-Shadow.BackgroundTransparency = 1
-Shadow.Image = "rbxassetid://1286757860"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.8
-Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
-Shadow.Parent = Main
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 360, 0, 190)
+main.Position = UDim2.new(0.5, -180, 0.5, -95)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BorderSizePixel = 0
+main.Parent = gui
 
--- Blur Effekt für den Inhalt hinter dem UI
-local BlurEffect = Instance.new("BlurEffect")
-BlurEffect.Size = 6
-BlurEffect.Parent = game:GetService("Lighting")
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
 
--- Titel
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -20, 0, 40)
-Title.Position = UDim2.new(0, 10, 0, 5)
-Title.BackgroundTransparency = 1
-Title.Text = "Instant Steal"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
-Title.Font = Enum.Font.GothamBold
-Title.TextYAlignment = Enum.TextYAlignment.Center
-Title.Parent = Main
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1
+stroke.Transparency = 0.2
+stroke.Color = Color3.fromRGB(255, 255, 255)
+stroke.Parent = main
 
--- Start Button
-local StartBtn = Instance.new("TextButton")
-StartBtn.Size = UDim2.new(1, -30, 0, 30)
-StartBtn.Position = UDim2.new(0, 15, 0, 55)
-StartBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
-StartBtn.BackgroundTransparency = 0.2
-StartBtn.Text = "Start Script"
-StartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-StartBtn.TextSize = 12
-StartBtn.Font = Enum.Font.GothamBold
-StartBtn.AutoButtonColor = false
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -20, 0, 28)
+title.Position = UDim2.new(0, 10, 0, 8)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Instant Teleport"
+title.Parent = main
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 8)
-BtnCorner.Parent = StartBtn
-StartBtn.Parent = Main
+local subtitle = Instance.new("TextLabel")
+subtitle.BackgroundTransparency = 1
+subtitle.Size = UDim2.new(1, -20, 0, 18)
+subtitle.Position = UDim2.new(0, 10, 0, 34)
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 12
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.TextColor3 = Color3.fromRGB(170, 170, 170)
+subtitle.Text = "Save your location and teleport back."
+subtitle.Parent = main
 
--- Loading Bar
-local LoadBg = Instance.new("Frame")
-LoadBg.Size = UDim2.new(1, -30, 0, 4)
-LoadBg.Position = UDim2.new(0, 15, 0, 95)
-LoadBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-LoadBg.BackgroundTransparency = 0.6
-LoadBg.BorderSizePixel = 0
+local notif = Instance.new("TextLabel")
+notif.Name = "Notif"
+notif.BackgroundTransparency = 1
+notif.Size = UDim2.new(1, -20, 0, 18)
+notif.Position = UDim2.new(0, 10, 0, 58)
+notif.Font = Enum.Font.Gotham
+notif.TextSize = 12
+notif.TextXAlignment = Enum.TextXAlignment.Left
+notif.TextColor3 = Color3.fromRGB(120, 200, 120)
+notif.Text = ""
+notif.Parent = main
 
-local LoadBgCorner = Instance.new("UICorner")
-LoadBgCorner.CornerRadius = UDim.new(1, 0)
-LoadBgCorner.Parent = LoadBg
+local buttons = Instance.new("Frame")
+buttons.BackgroundTransparency = 1
+buttons.Size = UDim2.new(1, -20, 0, 110)
+buttons.Position = UDim2.new(0, 10, 0, 78)
+buttons.Parent = main
 
-local LoadBar = Instance.new("Frame")
-LoadBar.Size = UDim2.new(0, 0, 1, 0)
-LoadBar.BackgroundColor3 = Color3.fromRGB(0, 175, 255)
-LoadBar.BackgroundTransparency = 0.3
-LoadBar.BorderSizePixel = 0
-LoadBar.Parent = LoadBg
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Vertical
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 10)
+layout.Parent = buttons
 
-local LoadCorner = Instance.new("UICorner")
-LoadCorner.CornerRadius = UDim.new(1, 0)
-LoadCorner.Parent = LoadBar
-LoadBg.Parent = Main
+local function makeButton(text)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 30)
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	btn.BorderSizePixel = 0
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 14
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Text = text
+	btn.AutoButtonColor = true
 
--- Status
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -30, 0, 18)
-Status.Position = UDim2.new(0, 15, 0, 103)
-Status.BackgroundTransparency = 1
-Status.Text = "Ready to start..."
-Status.TextColor3 = Color3.fromRGB(220, 220, 220)
-Status.TextSize = 10
-Status.Font = Enum.Font.Gotham
-Status.Parent = Main
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 10)
+	c.Parent = btn
 
--- Auto Block
-local AutoBlock = Instance.new("TextButton")
-AutoBlock.Size = UDim2.new(1, -30, 0, 20)
-AutoBlock.Position = UDim2.new(0, 15, 1, -30)
-AutoBlock.BackgroundTransparency = 1
-AutoBlock.Text = "Working Any Executor"
-AutoBlock.TextColor3 = Color3.fromRGB(76, 175, 80)
-AutoBlock.TextSize = 10
-AutoBlock.Font = Enum.Font.GothamBold
-AutoBlock.TextXAlignment = Enum.TextXAlignment.Left
-AutoBlock.Parent = Main
+	local s = Instance.new("UIStroke")
+	s.Thickness = 1
+	s.Transparency = 0.35
+	s.Color = Color3.fromRGB(255, 255, 255)
+	s.Parent = btn
 
-Main.Parent = Gui
-Gui.Parent = Player:WaitForChild("PlayerGui")
+	return btn
+end
 
--- Funktionen
-local blockOn = true
-local isRunning = false
+local saveBtn = makeButton("Save Location")
+saveBtn.LayoutOrder = 1
+saveBtn.Parent = buttons
 
-StartBtn.MouseButton1Click:Connect(function()
-    if isRunning then return end
-    isRunning = true
-    
-    StartBtn.Text = "Starting The Script..."
-    StartBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
-    
-    spawn(function()
-        local startTime = tick()
-        local duration = 5
-        
-        while tick() - startTime < duration do
-            local progress = (tick() - startTime) / duration
-            LoadBar.Size = UDim2.new(progress, 0, 1, 0)
-            wait(0.03)
-        end
-        
-        LoadBar.Size = UDim2.new(1, 0, 1, 0)
-        StartBtn.Text = "Loading For Script..."
-        StartBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
-        Status.Text = "Script is processing..."
-    end)
+local tpBtn = makeButton("Teleport Location")
+tpBtn.LayoutOrder = 2
+tpBtn.Parent = buttons
+
+local blockBtn = makeButton("Block All (does nothing)")
+blockBtn.LayoutOrder = 3
+blockBtn.Parent = buttons
+
+-- ====== DRAGGING ======
+do
+	local dragging = false
+	local dragStart, startPos
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+
+	main.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = main.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	main.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
+	end)
+end
+
+-- ====== LOGIC ======
+local savedCFrame = nil
+
+local function flashMessage(msg, good)
+	notif.Text = msg
+	notif.TextColor3 = good and Color3.fromRGB(120, 200, 120) or Color3.fromRGB(220, 140, 140)
+
+	-- tiny fade in/out
+	notif.TextTransparency = 1
+	TweenService:Create(notif, TweenInfo.new(0.15), {TextTransparency = 0}):Play()
+
+	task.delay(1.2, function()
+		if notif and notif.Parent then
+			TweenService:Create(notif, TweenInfo.new(0.25), {TextTransparency = 1}):Play()
+		end
+	end)
+end
+
+local function getHRP()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("HumanoidRootPart")
+end
+
+saveBtn.MouseButton1Click:Connect(function()
+	local hrp = getHRP()
+	savedCFrame = hrp.CFrame
+	flashMessage("Location saved ✅", true)
 end)
 
-AutoBlock.MouseButton1Click:Connect(function()
-    blockOn = not blockOn
-    if blockOn then
-        AutoBlock.Text = "Working Any Executor"
-        AutoBlock.TextColor3 = Color3.fromRGB(76, 175, 80)
-    else
-        AutoBlock.Text = "Working Any Executor" 
-        AutoBlock.TextColor3 = Color3.fromRGB(244, 67, 54)
-    end
+tpBtn.MouseButton1Click:Connect(function()
+	if not savedCFrame then
+		flashMessage("No location saved yet.", false)
+		return
+	end
+
+	local hrp = getHRP()
+	hrp.CFrame = savedCFrame
+	flashMessage("Teleported ✅", true)
 end)
 
--- Drag Funktion
-local dragging = false
-local dragStart, startPos
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-    end
+blockBtn.MouseButton1Click:Connect(function()
+	-- intentionally does nothing
+	flashMessage("Block button does nothing (as requested).", true)
 end)
 
-Main.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
+-- Optional: toggle UI with RightShift
+UIS.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		main.Visible = not main.Visible
+	end
 end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-        local delta = input.Position - dragStart
-        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- Cleanup
-Gui.Destroying:Connect(function()
-    BlurEffect:Destroy()
-end)
-
-print("Steal A Brainrot UI loaded!")
